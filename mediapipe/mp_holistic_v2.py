@@ -6,10 +6,10 @@ import mediapipe as mp
 
 if __name__ == "__main__":
     # Camera source
-    source = "V"  # M: Mobile phone, W: Webcam, V: Video file
+    source = "m"  # M: Mobile phone, W: Webcam, V: Video file
     match source.casefold():
         case "m":
-            ip_address = "10.20.49.185"
+            ip_address = "10.10.10.75"
             cap = cv.VideoCapture(f"http://{ip_address}:4747/video/force/640x480")
         case "w":
             cap = cv.VideoCapture(0)
