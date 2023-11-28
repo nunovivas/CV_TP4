@@ -1,6 +1,6 @@
 import cv2 as cv2
 from statistics import mean as mean
-
+import imageFunctions as imgF
 # Store fps values for calculating mean
 fps_list = []
 
@@ -107,6 +107,7 @@ def doHands(mp_holistic, orange_image, t_start, frame, results):
                             0 <= box[1] + box[3] <= frame.shape[0]
                         ):
                     # Replace the region inside the rectangle with the orange image
+                    #orange_resized= imgF.make_transparent(orange_resized)
                     frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]] = orange_resized
                 else :
                     print ("Invalid box size")
