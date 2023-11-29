@@ -1,5 +1,8 @@
 import cv2 as cv2
 from statistics import mean as mean
+import mediapipe as mp # started using it here after the stage 2
+
+import numpy as np
 import imageFunctions as imgF
 # Store fps values for calculating mean
 fps_list = []
@@ -23,44 +26,21 @@ def draw_fps(t_start, frame):
     )
 
 
-def overlay_transparent(background, overlay):
-    # Split the overlay image into channels
-    overlay_image = overlay[:, :, :3]  # RGB channels
-    overlay_mask = overlay[:, :, 3:]  # Alpha channel
-
-    # Invert the alpha mask
-    background_mask = 255 - overlay_mask
-
-    # Extract the region of interest from the background
-    background_region = cv2.bitwise_and(background, background, mask=background_mask)
-
-    # Extract the region of interest from the overlay
-    overlay_region = cv2.bitwise_and(overlay_image, overlay_image, mask=overlay_mask)
-
-    # Combine the two regions
-    combined = cv2.add(background_region, overlay_region)
-
-    # Update the background with the combined region
-    background[y_min:y_max, x_min:x_max] = combined
-
-    return background
-
-
 def findCenterX(mp_holistic, frame, landmarks):
-    palm_center_x = int((landmarks[mp_holistic.HandLandmark.THUMB_MCP].x +
+    palm_center_x = int(abs((landmarks[mp_holistic.HandLandmark.THUMB_MCP].x +
                                     landmarks[mp_holistic.HandLandmark.INDEX_FINGER_MCP].x +
                                     landmarks[mp_holistic.HandLandmark.MIDDLE_FINGER_MCP].x +
                                     landmarks[mp_holistic.HandLandmark.RING_FINGER_MCP].x +
-                                    landmarks[mp_holistic.HandLandmark.PINKY_MCP].x) / 5 * frame.shape[1])
+                                    landmarks[mp_holistic.HandLandmark.PINKY_MCP].x) / 5 * frame.shape[1]))
                         
     return int(palm_center_x)
 
 def findCenterY(mp_holistic, frame, landmarks):
-    palm_center_y = int((landmarks[mp_holistic.HandLandmark.THUMB_MCP].y +
+    palm_center_y = int(abs((landmarks[mp_holistic.HandLandmark.THUMB_MCP].y +
                                     landmarks[mp_holistic.HandLandmark.INDEX_FINGER_MCP].y +
                                     landmarks[mp_holistic.HandLandmark.MIDDLE_FINGER_MCP].y +
                                     landmarks[mp_holistic.HandLandmark.RING_FINGER_MCP].y +
-                                    landmarks[mp_holistic.HandLandmark.PINKY_MCP].y) / 5 * frame.shape[0])
+                                    landmarks[mp_holistic.HandLandmark.PINKY_MCP].y) / 5 * frame.shape[0]))
                         
     return int(palm_center_y)
 
@@ -92,25 +72,79 @@ def doHands(mp_holistic, orange_image, t_start, frame, results):
                             min(frame.shape[1], box_width),
                             min(frame.shape[0], box_height)
                         )
-                # Resize the orange image to fit the bounding box
-                orange_resized = cv2.resize(orange_image, (box[2], box[3]))
-                # Print shapes for troubleshooting
-                print("Orange image  resized shape:", orange_resized.shape)
-                print("Box:", box)
-                print("Frame shape:", frame.shape[0], frame.shape[1])
+                doMask(frame,box,orange_image)
+               
 
-                #Validate the box coordinates
-                if (
-                            0 <= box[0] < frame.shape[1] and
-                            0 <= box[1] < frame.shape[0] and
-                            0 <= box[0] + box[2] <= frame.shape[1] and
-                            0 <= box[1] + box[3] <= frame.shape[0]
-                        ):
-                    # Replace the region inside the rectangle with the orange image
-                    #orange_resized= imgF.make_transparent(orange_resized)
-                    frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]] = orange_resized
-                else :
-                    print ("Invalid box size")
+                
 
         # Draw FPS values
         draw_fps(t_start, frame)
+
+def doMask (frame, box, newImage):
+    # Resize the orange image to fit the bounding box
+    newImage_resized = cv2.resize(newImage, (box[2], box[3]))
+    # Print shapes for troubleshooting
+    print("Orange image  resized shape:", newImage_resized.shape)
+    print("Box:", box)
+    print("Frame shape:", frame.shape[0], frame.shape[1])
+    #Validate the box coordinates
+    if (
+                0 <= box[0] < frame.shape[1] and
+                0 <= box[1] < frame.shape[0] and
+                0 <= box[0] + box[2] <= frame.shape[1] and
+                0 <= box[1] + box[3] <= frame.shape[0]
+            ):
+        # Replace the region inside the rectangle with the orange image
+        #orange_resized= imgF.make_transparent(orange_resized)
+        #frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]] = orange_resized
+        # Create a mask based on the white background
+        # in the 4th channel.
+        mask = np.all(newImage_resized[:, :, :3] == [255, 255, 255], axis=-1)
+        # Invert the mask
+        inverse_mask = ~mask
+        # Create an alpha channel by converting the inverse mask to float (1 for white, 0 for non-white)
+        alpha_channel = inverse_mask.astype(float)
+
+        # Extract the region of interest from the frame
+        roi = frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]]
+
+        # Blend the images using the alpha channel
+        for c in range(0, 3):
+            roi[:, :, c] = (alpha_channel * newImage_resized[:, :, c] +
+                            (1.0 - alpha_channel) * roi[:, :, c])
+
+        # Update the frame with the blended result
+        frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]] = roi
+    else :
+        print ("Invalid box size")
+
+def detect_face(image):
+    
+    # Initialize Mediapipe Face Detection
+    face_detection = mp.solutions.face_detection
+    face_detection_module = face_detection.FaceDetection(min_detection_confidence=0.2) #, device=0 uses the GPU if available
+
+    # Convert the image to RGB
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Run face detection
+    results = face_detection_module.process(image_rgb)
+
+    # Check if faces are detected
+    if results.detections:
+        for detection in results.detections:
+            bboxC = detection.location_data.relative_bounding_box
+            ih, iw, _ = image.shape
+            bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
+                   int(bboxC.width * iw), int(bboxC.height * ih)
+
+            # # Calculate face center
+            # center_x = bbox[0] + bbox[2] // 2
+            # center_y = bbox[1] + bbox[3] // 2
+
+        # Return the center coordinates
+        # return center_x, center_y
+        return bbox
+    else:
+        print("No faces detected.")
+        return None

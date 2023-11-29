@@ -1,3 +1,6 @@
 verificar se vale a pena usar o media tasks?
 
 cada modelo é um ficheiro?!
+
+
+remover o media pipe da função main e mantê-lo só dentro das funções
