@@ -4,3 +4,9 @@ cada modelo é um ficheiro?!
 
 
 remover o media pipe da função main e mantê-lo só dentro das funções
+
+TODO para o Trabalho:
+Ter 2 jogos:
+bola ao cesto
+ticktacktoe
+leitor de emails
