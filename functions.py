@@ -53,7 +53,6 @@ def doHands(mp_holistic, orange_image, t_start, frame, results):
             landmarks = hand_landmarks.landmark
             # Calculate the palm center as the average of the base of the fingers
             palm_center_x = findCenterX(mp_holistic, frame, landmarks)
-
             palm_center_y = findCenterY(mp_holistic, frame, landmarks)
             # Draw a circle at the center of the palm
             # cv2.circle(frame, (palm_center_x, palm_center_y), radius=10, color=(0, 255, 0), thickness=-1)
@@ -73,20 +72,17 @@ def doHands(mp_holistic, orange_image, t_start, frame, results):
                             min(frame.shape[0], box_height)
                         )
                 doMask(frame,box,orange_image)
-               
-
-                
 
         # Draw FPS values
         draw_fps(t_start, frame)
 
-def doMask (frame, box, newImage):
+def doMask_Old (frame, box, newImage):
     # Resize the orange image to fit the bounding box
     newImage_resized = cv2.resize(newImage, (box[2], box[3]))
     # Print shapes for troubleshooting
-    print("Orange image  resized shape:", newImage_resized.shape)
-    print("Box:", box)
-    print("Frame shape:", frame.shape[0], frame.shape[1])
+    #print("Orange image  resized shape:", newImage_resized.shape)
+    #print("Box:", box)
+    #print("Frame shape:", frame.shape[0], frame.shape[1])
     #Validate the box coordinates
     if (
                 0 <= box[0] < frame.shape[1] and
@@ -118,6 +114,44 @@ def doMask (frame, box, newImage):
     else :
         print ("Invalid box size")
 
+def doMask(frame, box, newImage):
+    # Resize the image to fit the bounding box
+    newImage_resized = cv2.resize(newImage, (box[2], box[3]))
+    # Print shapes for troubleshooting
+    #print("Image resized shape:", newImage_resized.shape)
+    #print("Box:", box)
+    #print("Frame shape:", frame.shape[0], frame.shape[1])
+    
+    #check if it has alpha channel
+    if (not has_alpha_opencv(newImage)) :
+            print ("No alpha channel on the image")
+            return 0
+    # Validate the box coordinates
+    if (
+        0 <= box[0] < frame.shape[1] and
+        0 <= box[1] < frame.shape[0] and
+        0 <= box[0] + box[2] <= frame.shape[1] and
+        0 <= box[1] + box[3] <= frame.shape[0]
+    ):
+        # Create a mask based on the alpha channel (transparency)
+        alpha_channel = newImage_resized[:, :, 3] / 255.0
+        
+        # Extract the region of interest from the frame
+        roi = frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]]
+
+        # Blend the images using the alpha channel
+        for c in range(0, 3):
+            roi[:, :, c] = (alpha_channel * newImage_resized[:, :, c] +
+                            (1.0 - alpha_channel) * roi[:, :, c])
+
+        # Update the frame with the blended result
+        frame[box[1]:box[1] + box[3], box[0]:box[0] + box[2]] = roi
+    else:
+        print("Invalid box size")
+        
+
+def has_alpha_opencv(img):
+    return img.shape[-1] == 4
 def detect_face(image):
     
     # Initialize Mediapipe Face Detection
@@ -144,7 +178,9 @@ def detect_face(image):
 
         # Return the center coordinates
         # return center_x, center_y
+        face_detection_module.close() # try to prevent the error
         return bbox
     else:
         print("No faces detected.")
+        face_detection_module.close()
         return None

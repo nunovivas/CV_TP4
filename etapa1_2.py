@@ -28,9 +28,9 @@ def main():
 
 
     # Load the image of the orange
-    orange_image = cv2.imread('images/basketball.png')  # Replace 'orange.jpg' with the path to your orange image
+    orange_image = cv2.imread('images/laranja.png',cv2.IMREAD_UNCHANGED)  # Replace 'orange.jpg' with the path to your orange image
     # Replacement image
-    replacement_image=cv2.imread('images/basketball.png')
+    replacement_image=cv2.imread('images/basketball_alpha.png',cv2.IMREAD_UNCHANGED)
     # Check if the orange image is loaded successfully
     if orange_image is None:
         print("Error: Unable to load the orange image.")
@@ -61,13 +61,12 @@ def main():
             faceBox = f.detect_face (frame)
             if (faceBox):
                 # Draw a circle at the face center
-                cv2.rectangle(frame, faceBox, (0, 255, 0), 2)
-                # Replace the face with another image
-                replacement_image = cv2.resize(replacement_image, (faceBox[2], faceBox[3]))
+                # cv2.rectangle(frame, faceBox, (0, 255, 0), 2)
                 # Paste the replacement image onto the original image
                 # needs to check for boundaries.
+                
+                # treatedImage = cv2.resize(replacement_image, (faceBox[2], faceBox[3]))
                 f.doMask(frame,faceBox,replacement_image)
-                #frame[faceBox[1]:faceBox[1] + faceBox[3], faceBox[0]:faceBox[0] + faceBox[2]] = replacement_image
 
             mp_drawing.draw_landmarks(
                 frame,
