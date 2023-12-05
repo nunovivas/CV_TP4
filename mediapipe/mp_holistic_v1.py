@@ -4,23 +4,20 @@
 # Adapted from https://google.github.io/mediapipe/solutions/holistic.html
 import cv2 as cv
 import mediapipe as mp
-import numpy as np
-
 from statistics import mean as mean
-
 
 mp_holistic = mp.solutions.holistic  # Holistic model
 mp_drawing = mp.solutions.drawing_utils  # Drawing utilities
 mp_drawing_styles = mp.solutions.drawing_styles
 
 # Camera source
-source = "w"  # M: Mobile phone, W: Webcam, V: Video file
+source = "V"  # M: Mobile phone, W: Webcam, V: Video file
 match source.casefold():
     case "m":
         ip_address = "10.20.49.185"
         cap = cv.VideoCapture(f"http://{ip_address}:4747/video/force/640x480")
     case "w":
-        cap = cv.VideoCapture(1)
+        cap = cv.VideoCapture(0)
     case "v":
         cap = cv.VideoCapture("video/workout.webm")
 
@@ -48,7 +45,6 @@ def draw_fps(t_start, frame):
 fps_list = []
 
 with mp_holistic.Holistic() as holistic:
-    
     while cv.pollKey() == -1:
         t_start = cv.getTickCount()
 
@@ -63,9 +59,6 @@ with mp_holistic.Holistic() as holistic:
             frame = cv.rotate(frame, cv.ROTATE_90_CLOCKWISE)
 
         results = holistic.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
-
-        #blacken the media
-        frame = np.zeros_like(frame)
 
         # Draw landmark annotation on the image.
         mp_drawing.draw_landmarks(

@@ -10,13 +10,13 @@ import mediapipe as mp  # extract landmarks #https://google.github.io/mediapipe/
 from mp_holistic_v2 import draw_landmarks
 
 # Camera source
-source = "m"  # M: Mobile phone, W: Webcam, V: Video file
+source = "V"  # M: Mobile phone, W: Webcam, V: Video file
 match source.casefold():
     case "m":
-        ip_address = "10.10.10.75"
+        ip_address = "10.20.49.185"
         cap = cv.VideoCapture(f"http://{ip_address}:4747/video/force/640x480")
     case "w":
-        cap = cv.VideoCapture(1)
+        cap = cv.VideoCapture(0)
     case "v":
         cap = cv.VideoCapture("video/workout.webm")
 
@@ -56,8 +56,6 @@ def dumb_movement_detection(results):
 
     # R arm up
     # 16 RIGHT_WRIST; 12 RIGHT_SHOULDER
-    pose_lmk.
-    pose[pose_lmk]
     if pose[pose_lmk.RIGHT_WRIST].y < pose[pose_lmk.RIGHT_SHOULDER].y:
         print(f"R arm up {timestamp}")
 

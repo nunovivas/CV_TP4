@@ -7,7 +7,7 @@ remover o media pipe da função main e mantê-lo só dentro das funções
 
 
 Em relação às imagens, ver se é possivel arranjar um PNG com transparencia em Alpha channel e com usa-lo com uma mascara
-de transparencia.
+de transparencia.DONE
 
 
 TODO para o Trabalho:
