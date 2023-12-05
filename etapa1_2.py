@@ -49,7 +49,8 @@ def main():
     lWrist = (0,0)
     rWrist = (0,0)
     movementThreshold = 100  # pixels
-    previousTime = 5  # seconds
+    previousTime = 0
+    timeThreshold = 1  # seconds
     frameThreshold = 25
     totalFrames = 0
     lastFrameCount = 0
@@ -106,21 +107,18 @@ def main():
             for hand_landmarks in [results.left_hand_landmarks]:
                 if hand_landmarks:
                     landmarks = hand_landmarks.landmark
-                    lWrist = int(landmarks[mp_holistic.HandLandmark.WRIST].x * frame.shape[1]), landmarks[
-                        mp_holistic.HandLandmark.WRIST].y * frame.shape[0]
+                    lWrist = int(landmarks[mp_holistic.HandLandmark.WRIST].y * frame.shape[0]), landmarks[
+                        mp_holistic.HandLandmark.WRIST].x * frame.shape[1]
 
-            t_end = cv2.getTickCount()
-            totalFrames = totalFrames + cv2.getTickFrequency() / (t_end - t_start)
-            #if time.time() - previousTime > 1: # em vez de contar tempo.. conto frames...
-            if totalFrames > lastFrameCount - frameThreshold:
-                print(f"RESET TIMER-check for movement. Last known LEFT HAND position{lastKnownLeftHandPos}")
+            if time.time() - previousTime > timeThreshold: # em vez de contar tempo.. conto frames... tem que ser tempo pq frames varia muito
+
+                print(f"RESET TIMER-check for movement. Last known LEFT HAND position{lastKnownLeftHandPos} previous time:{previousTime} current time: {int(time.time())}")
                 leftHandSwipedRight = didItSwipeFromLeftToRight(lastKnownLeftHandPos, movementThreshold, lWrist)
                 leftHandSwipedLeft = didItSwipeFromRightToLeft(lastKnownLeftHandPos, movementThreshold, lWrist)
                 if leftHandSwipedRight:
                     # it moved
                     print("LEFT HAND SWIPED RIGHT!")
-                    previousTime = time.time()  # update it only in this instance so it keeps checking if there is no movement
-                lastFrameCount = totalFrames
+                previousTime = int(time.time())  # update it only in this instance so it keeps checking if there is no movement
                 lastKnownLeftHandPos = lWrist
             mp_drawing.draw_landmarks(
                 frame,
