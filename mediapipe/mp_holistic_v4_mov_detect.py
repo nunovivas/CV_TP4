@@ -10,10 +10,10 @@ import mediapipe as mp  # extract landmarks #https://google.github.io/mediapipe/
 from mp_holistic_v2 import draw_landmarks
 
 # Camera source
-source = "V"  # M: Mobile phone, W: Webcam, V: Video file
+source = "m"  # M: Mobile phone, W: Webcam, V: Video file
 match source.casefold():
     case "m":
-        ip_address = "10.20.49.185"
+        ip_address ="10.10.10.29"
         cap = cv.VideoCapture(f"http://{ip_address}:4747/video/force/640x480")
     case "w":
         cap = cv.VideoCapture(0)
