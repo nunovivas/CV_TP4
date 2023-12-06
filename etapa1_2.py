@@ -56,7 +56,7 @@ def main():
     lastFrameCount = 0
 
     # Camera source
-    source = "m"  # M: Mobile phone, W: Webcam, V: Video file
+    source = "w"  # M: Mobile phone, W: Webcam, V: Video file
     match source.casefold():
         case "m":
             ip_address = "10.10.10.29"
