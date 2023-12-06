@@ -1,3 +1,4 @@
+import cv2
 import cv2 as cv2
 from statistics import mean as mean
 import mediapipe as mp  # started using it here after the stage 2
@@ -27,6 +28,20 @@ def draw_fps(t_start, frame):
         thickness=1,
         lineType=cv2.LINE_AA,
     )
+
+
+def writeStringBottomLeftFrame(frame, text):
+    height, _ = frame.shape[:2]
+    position = (10, height - 20)
+    cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 50, 255), thickness=2, )
+
+
+def writeStringBottomRightFrame(frame, text):
+    height, width = frame.shape[:2]  # Fix: Extract height and width correctly
+    text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=2)[0]
+
+    position = (width - 10 - text_size[0], height - 20)
+    cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 50, 255), thickness=2)
 
 
 def findCenterX(mp_holistic, frame, landmarks):
@@ -69,8 +84,17 @@ def doFaceV2(replacement_image, frame, results):
             int((max_y - min_y) * ih)
         )
         doMask(frame, bbox, replacement_image)
-
-
+        return int(min_x * iw), int(min_y * ih)
+def checkHandsAboveHead(handPos,headPos):
+    if handPos and headPos:
+        #print(f"HandPos:{handPos[0]} | HeadPos:{headPos[0]}")
+        #  hand and head must be visible
+        if handPos[0] > 0 and headPos[0] > 0 and (handPos[0] < headPos[0]):
+            return True
+        else:
+            return False
+    else:
+        return False
 def doHands(mp_holistic, orange_image, frame, results):
     # for hand_landmarks in [results.left_hand_landmarks, results.right_hand_landmarks]:
 

@@ -21,9 +21,9 @@ def didItMove(lastKnownHandPos, movementThreshold, handPosition):
         return False
 def didItSwipeFromRightToLeft(lastKnownHandPos, movementThreshold, handPosition):
     # x é pequeno e passa para grande
-    # aqui estava false para a variável geral...
+    # tipo estava 86 e passa para 300
     if lastKnownHandPos is not None:
-        if lastKnownHandPos[1] + movementThreshold < handPosition[1]:
+        if handPosition[1] > lastKnownHandPos[1] + movementThreshold:
             return True
         else:
             return False
@@ -95,31 +95,38 @@ def main():
 
             # blacken the media
             # frame = np.zeros_like(frame)
-            f.doFaceV2(replacement_image, frame, results)
+            lastKnownHeadMaxPos = f.doFaceV2(replacement_image, frame, results)
             f.doHands(mp_holistic, orange_image, frame, results)
-            # TODO:
-            # ok. aqui tem que ver mao a mao e retornar o xy de cada mão para o swipe
-            # depois será preciso ver POSES para ver se se tem :
-            # Um braço no ar;
-            # Dois braços no ar;
-            # isto já está tudo feito no holistic v4 do Professor.
 
             for hand_landmarks in [results.left_hand_landmarks]:
                 if hand_landmarks:
                     landmarks = hand_landmarks.landmark
                     lWrist = int(landmarks[mp_holistic.HandLandmark.WRIST].y * frame.shape[0]), landmarks[
                         mp_holistic.HandLandmark.WRIST].x * frame.shape[1]
-
+            for hand_landmarks in [results.right_hand_landmarks]:
+                if hand_landmarks:
+                    landmarks = hand_landmarks.landmark
+                    rWrist = int(landmarks[mp_holistic.HandLandmark.WRIST].y * frame.shape[0]), landmarks[
+                        mp_holistic.HandLandmark.WRIST].x * frame.shape[1]
             if time.time() - previousTime > timeThreshold: # em vez de contar tempo.. conto frames... tem que ser tempo pq frames varia muito
-
-                print(f"RESET TIMER-check for movement. Last known LEFT HAND position{lastKnownLeftHandPos} previous time:{previousTime} current time: {int(time.time())}")
+                print(f"RESET TIMER-check for movement. Last known LH pos{lastKnownLeftHandPos}. Last known RH pos{lastKnownRightHandPos} previous time:{previousTime} current time: {int(time.time())}")
                 leftHandSwipedRight = didItSwipeFromLeftToRight(lastKnownLeftHandPos, movementThreshold, lWrist)
-                leftHandSwipedLeft = didItSwipeFromRightToLeft(lastKnownLeftHandPos, movementThreshold, lWrist)
+                rightHandSwipedLeft = didItSwipeFromRightToLeft(lastKnownRightHandPos, movementThreshold, rWrist)
+
                 if leftHandSwipedRight:
-                    # it moved
-                    print("LEFT HAND SWIPED RIGHT!")
+                    print ("LEFT HAND SWIPED RIGHT!")
+                    f.writeStringBottomLeftFrame(frame,"LEFT HAND SWIPED RIGHT!")
+                if rightHandSwipedLeft:
+                    print("RIGHT HAND SWIPED LEFT")
+                    f.writeStringBottomRightFrame(frame,"RIGHT HAND SWIPED LEFT")
                 previousTime = int(time.time())  # update it only in this instance so it keeps checking if there is no movement
                 lastKnownLeftHandPos = lWrist
+                lastKnownRightHandPos = rWrist
+            #check for raised hands
+            if (f.checkHandsAboveHead(lWrist,lastKnownHeadMaxPos)):
+                print("LEFT HAND RAISED")
+            if (f.checkHandsAboveHead(rWrist,lastKnownHeadMaxPos)):
+                print("RIGHT HAND RAISED")
             mp_drawing.draw_landmarks(
                 frame,
                 results.left_hand_landmarks,
